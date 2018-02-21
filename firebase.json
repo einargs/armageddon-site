@@ -13,10 +13,8 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+      { "source": "/api/device", "function": "listAvailableDevices" },
+      { "source": "**", "destination": "/index.html" }
     ]
   }
 }

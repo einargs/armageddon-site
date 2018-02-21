@@ -2,7 +2,18 @@ import * as functions from 'firebase-functions';
 import { google } from "googleapis";
 import * as firebaseAdmin from "firebase-admin";
 
-//process.env.GOOGLE_APPLICATION_CREDENTIALS = "/home/einargs/Auth/armageddon-cloud/device-lister-service-account.json";
+// Initialize firebase admin
+firebaseAdmin.initializeApp(functions.config().firebase);
+
+// Constants
+const MAX_TIME_SINCE_LAST_HEARTBEAT = 10 * 60 * 1000; // 10 minutes
+const IOT_ARM_DEVICES_CONFIG = {
+  projectId: "armageddon-cloud",
+  cloudRegion: "us-central1",
+  registryId: "arm-devices",
+};
+
+// Interfaces
 interface User {
   uid: string;
 }
@@ -18,14 +29,6 @@ interface Device {
   state: DeviceState;
 }
 
-// Constants
-const MAX_TIME_SINCE_LAST_HEARTBEAT = 10 * 60 * 1000; // 10 minutes
-const IOT_ARM_DEVICES_CONFIG = {
-  projectId: "armageddon-cloud",
-  cloudRegion: "us-central1",
-  registryId: "arm-devices",
-};
-
 // Should the device be shown to the user?
 function isDeviceAvailable(device: Device, user: User) {
   const blocked = device.blocked;
@@ -38,6 +41,8 @@ function isDeviceAvailable(device: Device, user: User) {
 
 
 //
+//TODO: consider caching the promise/result in a global variable, per:
+// https://firebase.google.com/docs/functions/tips#use_global_variables_to_reuse_objects_in_future_invocations
 async function getIotClient() {
   const { credential, projectId } = await google.auth.getApplicationDefault();
   const configuredCredential = credential;
@@ -68,7 +73,7 @@ async function getUserFromToken(token): Promise<User> {
 }
 
 //
-async function listDevices(
+async function getDeviceList(
     { registryId, projectId, cloudRegion }): Promise<Device[]> {
   const iotClient = await getIotClient();
   const parentName = `projects/${projectId}/locations/${cloudRegion}`;
@@ -87,22 +92,17 @@ async function listDevices(
   return response.data.devices;
 }
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
-const httpListDevices = functions.https.onRequest(async (req, res) => {
-  const devices = await listDevices(IOT_ARM_DEVICES_CONFIG);
+// firebase functions
+const listDevices = functions.https.onRequest(async (req, res) => {
+  const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
   res.json(devices);
 });
 
-const httpListAvailableDevices = functions.https.onRequest(async (req, res) => {
+const listAvailableDevices = functions.https.onRequest(async (req, res) => {
   const idToken = req.body.message.idToken;
   const userPromise = getUserFromToken(idToken);
 
-  const devices = await listDevices(IOT_ARM_DEVICES_CONFIG);
+  const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
   const user = await userPromise; // Necessary to maintain parallelism.
   const availableDevices = devices.map(device => isDeviceAvailable(device, user));
 
@@ -110,6 +110,6 @@ const httpListAvailableDevices = functions.https.onRequest(async (req, res) => {
 });
 
 export {
-  httpListDevices,
-  httpListAvailableDevices
+  listDevices,
+  listAvailableDevices
 };
