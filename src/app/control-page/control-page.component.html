@@ -1,0 +1,7 @@
+<section class="control-page-body">
+  <mat-form-field>
+    <input matInput #msgr
+      (keyup.enter)="send(msgr.value); msgr.value = ''" />
+  </mat-form-field>
+  <mat-checkbox (change)="updateLed($event.checked)">Control the LED</mat-checkbox>
+</section>

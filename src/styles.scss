@@ -1,1 +1,12 @@
-/* You can add global styles to this file, and also import other style files */
+@import "~@angular/material/theming";
+@import "./_theme.scss";
+@import "./_armageddon-app-theme.scss";
+
+// Load the theme
+@include mat-core();
+@include angular-material-theme($theme);
+@include armageddon-app-theme($theme);
+
+body {
+  margin: 0;
+}
