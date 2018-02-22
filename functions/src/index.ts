@@ -30,13 +30,12 @@ interface Device {
 }
 
 // Should the device be shown to the user?
-function isDeviceAvailable(device: Device, user: User) {
+function isDeviceAccessable(device: Device, user: User) {
   const blocked = device.blocked;
   const timeSinceHeartbeat = Date.now() - Date.parse(device.lastHeartbeatTime);
   const recentHeartbeat = timeSinceHeartbeat < MAX_TIME_SINCE_LAST_HEARTBEAT;
-  const reserved = device.state.reserved;
   const userAllowed = device.state.allowedUsers.includes(user.uid);
-  return !blocked && !reserved && recentHeartbeat && userAllowed;
+  return !blocked && recentHeartbeat && userAllowed;
 }
 
 
@@ -98,18 +97,18 @@ const listDevices = functions.https.onRequest(async (req, res) => {
   res.json(devices);
 });
 
-const listAvailableDevices = functions.https.onRequest(async (req, res) => {
+const listAccessableDevices = functions.https.onRequest(async (req, res) => {
   const idToken = req.body.message.idToken;
   const userPromise = getUserFromToken(idToken);
 
   const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
   const user = await userPromise; // Necessary to maintain parallelism.
-  const availableDevices = devices.map(device => isDeviceAvailable(device, user));
+  const availableDevices = devices.map(device => isDeviceAccessable(device, user));
 
   res.json(availableDevices);
 });
 
 export {
   listDevices,
-  listAvailableDevices
+  listAccessableDevices
 };

@@ -1,0 +1,5 @@
+<mat-list>
+  <mat-list-item
+    *ngFor="let device of devices | async"
+    [class.reserved]="device.state&&device.state.reserved">{{device.id}}</mat-list-item>
+</mat-list>

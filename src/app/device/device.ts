@@ -1,4 +1,9 @@
+export interface DeviceState {
+  allowedUsers?: string[];
+  reserved?: boolean;
+}
+
 export interface Device {
-  allowedUsers: string[];
-  reserved: boolean;
+  id: string;
+  state: DeviceState;
 }

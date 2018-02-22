@@ -1,7 +1,11 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-const routes: Routes = [];
+import { DeviceListComponent } from "./device-list/device-list.component";
+
+const routes: Routes = [
+  { path: "", component: DeviceListComponent }
+];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
