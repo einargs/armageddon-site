@@ -1,9 +1,11 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
+import { HomePageComponent } from "./home-page/home-page.component";
+
 const routes: Routes = [
   { path: "device", loadChildren: "app/device/device.module#DeviceModule" },
-  { path: "", redirectTo: "device", pathMatch: "full" }
+  { path: "", component: HomePageComponent }
 ];
 
 @NgModule({
