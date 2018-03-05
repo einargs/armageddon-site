@@ -9,6 +9,7 @@ import { EffectsModule } from "@ngrx/effects";
 import { StoreDevtoolsModule } from "@ngrx/store-devtools";
 
 import { environment } from "../../environments/environment";
+import { AuthModule } from "../auth/auth.module";
 import { AuthEffects } from "../auth/auth.effects";
 import { coreReducers, initialCoreState } from "./core.reducer";
 
@@ -26,8 +27,12 @@ import { coreReducers, initialCoreState } from "./core.reducer";
     StoreDevtoolsModule.instrument({
       maxAge: 25, // number of past states to retain
       logOnly: environment.production // Disable other features while in prod.
-    })
+    }),
+    AuthModule
   ],
-  declarations: []
+  declarations: [],
+  exports: [
+    AuthModule
+  ]
 })
 export class CoreModule { }
