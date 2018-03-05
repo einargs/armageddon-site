@@ -10,7 +10,7 @@ import { StoreDevtoolsModule } from "@ngrx/store-devtools";
 
 import { environment } from "../../environments/environment";
 import { AuthEffects } from "../auth/auth.effects";
-import { coreReducers } from "./core.reducer";
+import { coreReducers, initialCoreState } from "./core.reducer";
 
 @NgModule({
   imports: [
@@ -19,8 +19,10 @@ import { coreReducers } from "./core.reducer";
     HttpClientModule,
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAuthModule,
+    StoreModule.forRoot(coreReducers, {
+      initialState: initialCoreState
+    }),
     EffectsModule.forRoot([AuthEffects]),
-    StoreModule.forRoot(coreReducers),
     StoreDevtoolsModule.instrument({
       maxAge: 25, // number of past states to retain
       logOnly: environment.production // Disable other features while in prod.

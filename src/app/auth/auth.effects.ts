@@ -39,9 +39,9 @@ export class AuthEffects {
     return Observable.fromPromise(logInPromise);
   }
 
-  private mapAuthState(user?: FirebaseUser) {
+  private mapAuthState(user?: FirebaseUser): LoggedIn | LogOut {
     return user
-        ? new LoggedIn({ userId: user.uid })
+        ? new LoggedIn({ userId: user.uid, displayName: user.displayName })
         : new LogOut();
   }
 }

@@ -1,3 +1,5 @@
+import { createSelector, createFeatureSelector } from "@ngrx/store";
+
 import { AuthState, AuthActionTypes, AuthAction } from "./auth.actions";
 
 export function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -10,3 +12,11 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
       return state;
   }
 }
+
+export const getAuthState = createFeatureSelector<AuthState>("auth");
+export const getLoggedIn = createSelector(
+    getAuthState,
+    (source: AuthState) => source.userLoggedIn);
+export const getUser = createSelector(
+    getAuthState,
+    (source: AuthState) => source.user);

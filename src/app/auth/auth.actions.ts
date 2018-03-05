@@ -2,12 +2,18 @@ import { Action } from "@ngrx/store";
 
 export interface User {
   userId: string;
+  displayName: string;
 }
 
 export interface AuthState {
   userLoggedIn: boolean;
   user: User;
 }
+
+export const initialAuthState = {
+  userLoggedIn: false,
+  user: null
+};
 
 export enum AuthActionTypes {
   LOG_IN_WITH_GOOGLE = "[Auth] LOG_IN_WITH_GOOGLE",
