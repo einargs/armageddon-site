@@ -97,8 +97,8 @@ const listDevices = functions.https.onRequest(async (req, res) => {
   res.json(devices);
 });
 
-const listAccessableDevices = functions.https.onRequest(async (req, res) => {
-  const idToken = req.body.message.idToken;
+const listAccessibleDevices = functions.https.onRequest(async (req, res) => {
+  const idToken = req.get("Authorization"); // Get the authorization header
   const userPromise = getUserFromToken(idToken);
 
   const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
@@ -109,6 +109,6 @@ const listAccessableDevices = functions.https.onRequest(async (req, res) => {
 });
 
 export {
-  listDevices,
-  listAccessableDevices
+  //listDevices, // Originally for testing; insecure
+  listAccessibleDevices
 };
