@@ -9,8 +9,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "mock-api": "json-server --watch ./mock-api.json",
-    "serve-api": "ng serve --poll=1000 --proxy-config ./proxy.conf.json && npm run mock-api"
+    "mock-api": "json-server --watch ./mock-api.json --routes ./mock-api-routes.json",
+    "serve-for-api": "ng serve --poll=1000 --proxy-config ./proxy.conf.json"
   },
   "private": true,
   "dependencies": {
