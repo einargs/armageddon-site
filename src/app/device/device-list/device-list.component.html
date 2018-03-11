@@ -1,5 +1,8 @@
-<mat-nav-list>
-  <a mat-list-item
-    *ngFor="let device of devices | async"
-    [routerLink]="[device.id]">{{device.id}}</a>
-</mat-nav-list>
+<section>
+  <mat-nav-list>
+    <a mat-list-item
+      *ngFor="let device of devices | async"
+      [routerLink]="[device.id]"
+      [class.blocked]="device.blocked">{{device.id}}</a>
+  </mat-nav-list>
+</section>
