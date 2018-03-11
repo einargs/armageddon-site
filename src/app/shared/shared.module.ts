@@ -7,7 +7,8 @@ import {
   MatFormFieldModule,
   MatInputModule,
   MatListModule,
-  MatButtonModule
+  MatButtonModule,
+  MatCardModule
 } from "@angular/material";
 
 @NgModule({
@@ -21,7 +22,8 @@ import {
     MatFormFieldModule,
     MatInputModule,
     MatListModule,
-    MatButtonModule
+    MatButtonModule,
+    MatCardModule
   ]
 })
 export class SharedModule { }

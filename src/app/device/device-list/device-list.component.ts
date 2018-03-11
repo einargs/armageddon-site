@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from "rxjs/Observable";
+import { Store, select } from "@ngrx/store";
 
 import { Device } from "../device";
-import { DeviceListerService } from "../device-lister.service";
+import { State, getAllDevices } from "../device-feature.reducer";
+import { LoadAccessibleDevices } from "../device.actions";
 
 @Component({
   selector: 'arm-device-list',
@@ -10,15 +12,17 @@ import { DeviceListerService } from "../device-lister.service";
   styleUrls: ['./device-list.component.scss']
 })
 export class DeviceListComponent implements OnInit {
-  devices: Observable<Device[]>;
+  devices: Observable<Device[]> =
+      this.store.pipe(select(getAllDevices));
 
   constructor(
-    private deviceLister: DeviceListerService
+    private store: Store<State>
   ) {
-    this.devices = this.deviceLister.listAvailableDevices();
+    this.store.dispatch(new LoadAccessibleDevices());
   }
 
   ngOnInit() {
+
   }
 
 }

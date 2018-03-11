@@ -7,37 +7,68 @@ firebaseAdmin.initializeApp(functions.config().firebase);
 
 // Constants
 const MAX_TIME_SINCE_LAST_HEARTBEAT = 10 * 60 * 1000; // 10 minutes
-const IOT_ARM_DEVICES_CONFIG = {
+const IOT_ARM_DEVICES_CONFIG: RegistryDescription = {
   projectId: "armageddon-cloud",
   cloudRegion: "us-central1",
   registryId: "arm-devices",
 };
 
 // Interfaces
+interface UserData {
+  // Map of device ids to boolean values
+  allowedDevices: {[id: string]: boolean;}
+}
+
 interface User {
   uid: string;
+  data: UserData;
 }
 
 interface DeviceState {
   reserved: boolean;
-  allowedUsers: Array<string>;
+  allowedUsers: string[];
 }
 
 interface Device {
+  id: string;
   blocked: boolean;
   lastHeartbeatTime: string;
   state: DeviceState;
 }
 
-// Should the device be shown to the user?
-function isDeviceAccessable(device: Device, user: User) {
-  const blocked = device.blocked;
-  const timeSinceHeartbeat = Date.now() - Date.parse(device.lastHeartbeatTime);
-  const recentHeartbeat = timeSinceHeartbeat < MAX_TIME_SINCE_LAST_HEARTBEAT;
-  const userAllowed = device.state.allowedUsers.includes(user.uid);
-  return !blocked && recentHeartbeat && userAllowed;
+interface DeviceConfig {
+  // Map of LED pin names to boolean on/off values
+  leds: {[id: string]: boolean}
 }
 
+interface RegistryDescription {
+  registryId: string;
+  projectId: string;
+  cloudRegion: string;
+}
+
+interface DeviceDescription extends RegistryDescription {
+  deviceId: string;
+}
+
+// Decode the base64 buffers in a device response & otherwise reformat
+// the direct API response.
+// See https://cloud.google.com/iot/docs/reference/cloudiot/rest/v1/projects.locations.registries.devices#resource-device
+// for documentation on the original formats.
+function decodeDevice(device: any) {
+  return {
+    id: device.id,
+    blocked: device.blocked,
+    lastHeartbeatTime: device.lastHeartbeatTime,
+    state: JSON.parse(
+        Buffer.from(device.state.binaryData, "base64").toString("utf8"))
+  }
+}
+
+// Is a user allowed to configure this device?
+function canUserConfigureDevice(deviceId: string, user: User) {
+  return user.data.allowedDevices[deviceId];
+}
 
 //
 //TODO: consider caching the promise/result in a global variable, per:
@@ -45,20 +76,6 @@ function isDeviceAccessable(device: Device, user: User) {
 async function getIotClient() {
   const { credential, projectId } = await google.auth.getApplicationDefault();
   const configuredCredential = credential;
-  // Commented out because typescript is throwing fits about type errors.
-  // I guess this might not be necessary? Maybe new stuff is handling this.
-  // That, or someone forgot to consider something while writing the typescript.
-  /*const createScoped =
-      credential.createScopedRequired && credential.createScopedRequired();
-
-  const configuredCredential = createScoped ?
-      credential.createScoped([
-        "email",
-        "openid",
-        "https://www.googleapis.com/auth/cloudplatformprojects.readonly",
-        "https://www.googleapis.com/auth/firebase",
-        "https://www.googleapis.com/auth/cloud-platform"
-      ]) : credential;*/
 
   return google.cloudiot({
     version: "v1",
@@ -66,49 +83,155 @@ async function getIotClient() {
   });
 }
 
-//
+// Get the user id from the token and app-specific user data from firestore.
 async function getUserFromToken(token): Promise<User> {
-  return await firebaseAdmin.auth().verifyIdToken(token);
+  const user = await firebaseAdmin.auth().verifyIdToken(token);
+  const userData: any = (await firebaseAdmin.firestore()
+      .doc(`users/${user.uid}`)
+      .get()).data();
+
+  console.log(userData);
+
+  return {
+    uid: user.uid,
+    data: userData
+  };
 }
 
-//
-async function getDeviceList(
-    { registryId, projectId, cloudRegion }): Promise<Device[]> {
-  const iotClient = await getIotClient();
+// Generate the appropriate path to a device registry
+function makeRegistryName(registryDescription: RegistryDescription) {
+  const { registryId, projectId, cloudRegion } = registryDescription;
   const parentName = `projects/${projectId}/locations/${cloudRegion}`;
   const registryName = `${parentName}/registries/${registryId}`;
-
-  const request = {
-    parent: registryName
-  };
-
-  const response: any = await new Promise((resolve, reject) => {
-    iotClient.projects.locations.registries.devices.list(request, (err, data) => {
-      resolve(data);
-    });
-  });
-
-  return response.data.devices;
+  return registryName;
 }
 
-// firebase functions
-const listDevices = functions.https.onRequest(async (req, res) => {
-  const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
-  res.json(devices);
+// Generate the appropriate path to a device in a registry
+function makeDeviceName(deviceDescription: DeviceDescription) {
+  const { deviceId } = deviceDescription;
+
+  // Device description extends registry description
+  // Which means that a device description can be passed to
+  // makeRegistryName to get the registry of the device.
+  const registryName = makeRegistryName(deviceDescription);
+  const deviceName = `${registryName}/devices/${deviceId}`;
+
+  return deviceName;
+}
+
+// Extend a RegistryDescription with a deviceId to create a DeviceDescription
+function describeDeviceInRegistry(
+    registry: RegistryDescription, deviceId: string): DeviceDescription {
+  return {
+    ...registry,
+    deviceId
+  }
+}
+
+// Get the devices a user is allowed to access
+async function getUserDevices(
+    registryDescription: RegistryDescription, user: User): Promise<Device[]> {
+  const iotClient = await getIotClient();
+  const registryName = makeRegistryName(registryDescription);
+
+  const apiRequestParameters = {
+    // The registry the device is in
+    parent: registryName,
+    // The ids of the devices that should be returned
+    deviceIds: Object.keys(user.data.allowedDevices),
+    // The fields that should be returned in the request
+    fieldMask: [
+      "blocked",
+      "lastHeartbeatTime",
+      "state"
+    ].join(",")
+  };
+
+  // Make the request to the API & await the response
+  const apiResponse: any = await new Promise((resolve, reject) => {
+    iotClient.projects.locations.registries.devices.list(
+        apiRequestParameters, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+  });
+
+  // Map the raw API format of the devices to a friendlier version
+  const devices = apiResponse.data.devices.map(decodeDevice);
+  console.log(devices);
+
+  return devices;
+}
+
+// Modify a device's configuration.
+// NOTE: This function assumes that authentication has already been performed,
+// and in no way checks user permissions to perform this action.
+async function modifyDeviceConfiguration(
+    deviceDescription: DeviceDescription, newConfig: DeviceConfig) {
+  const iotClient = await getIotClient();
+  const deviceName = makeDeviceName(deviceDescription);
+
+  const apiRequestParameters = {
+    name: deviceName,
+    resource: {
+      versionToUpdate: "0",
+      binaryData: Buffer.from(JSON.stringify(newConfig)).toString("base64")
+    }
+  };
+
+  const apiResponse: any = await new Promise((resolve, reject) => {
+    iotClient.projects.locations.registries.devices.modifyCloudToDeviceConfig(
+        apiRequestParameters, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+  });
+}
+
+// HTTP functions
+const listAccessibleDevices = functions.https.onRequest(async (req, res) => {
+  const idToken = req.get("Authorization"); // Get the authorization header
+  const user = await getUserFromToken(idToken);
+
+  const userDevices = await getUserDevices(IOT_ARM_DEVICES_CONFIG, user);
+
+  res.json(userDevices);
 });
 
-const listAccessableDevices = functions.https.onRequest(async (req, res) => {
-  const idToken = req.body.message.idToken;
-  const userPromise = getUserFromToken(idToken);
+//TODO:add authorization!
+const configureDevice = functions.https.onRequest(async (req, res) => {
+  const deviceId: string = req.body.deviceId;
+  const deviceDescription: DeviceDescription =
+      describeDeviceInRegistry(IOT_ARM_DEVICES_CONFIG, deviceId);
+  const newConfig: any = req.body.config;
+  const idToken = req.get("Authorization");
 
-  const devices = await getDeviceList(IOT_ARM_DEVICES_CONFIG);
-  const user = await userPromise; // Necessary to maintain parallelism.
-  const availableDevices = devices.map(device => isDeviceAccessable(device, user));
+  try {
+    const user = await getUserFromToken(idToken);
 
-  res.json(availableDevices);
+    // Verify that the user can configure the device
+    if (canUserConfigureDevice(deviceId, user)) {
+      try {
+        await modifyDeviceConfiguration(deviceDescription, newConfig);
+      } catch (error) {
+        console.error("Error while changing device config");
+        console.error(error);
+        res.status(500).end();
+      }
+
+      res.status(204).end(); //204: Proccessed successfully, not returning content
+    } else {
+      res.status(401).end(); //401: Unauthorized/not authorized for this
+    }
+  } catch (error) {
+    console.error("Error while getting user");
+    console.error(error);
+    res.status(500).end(); //500: internal server error
+  }
 });
 
 export {
-  listDevices,
-  listAccessableDevices
+  //listDevices, // Originally for testing; insecure
+  listAccessibleDevices,
+  configureDevice
 };

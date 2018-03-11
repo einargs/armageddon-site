@@ -8,7 +8,9 @@
     "build-prod": "ng build --prod --aot --build-optimizer",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "mock-api": "json-server --watch ./mock-api.json",
+    "serve-api": "ng serve --poll=1000 --proxy-config ./proxy.conf.json && npm run mock-api"
   },
   "private": true,
   "dependencies": {
@@ -25,6 +27,7 @@
     "@angular/router": "^5.2.0",
     "@angular/service-worker": "^5.2.0",
     "@ngrx/effects": "^5.1.0",
+    "@ngrx/entity": "^5.2.0",
     "@ngrx/store": "^5.1.0",
     "@ngrx/store-devtools": "^5.1.0",
     "angularfire2": "^5.0.0-rc.6",
@@ -43,6 +46,7 @@
     "codelyzer": "^4.0.1",
     "jasmine-core": "~2.8.0",
     "jasmine-spec-reporter": "~4.2.1",
+    "json-server": "^0.12.1",
     "karma": "~2.0.0",
     "karma-chrome-launcher": "~2.2.0",
     "karma-coverage-istanbul-reporter": "^1.2.1",
