@@ -1,19 +1,27 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StoreModule } from "@ngrx/store";
+import { EffectsModule } from "@ngrx/effects";
 
 import { SharedModule } from "../shared/shared.module";
 
 import { DeviceRoutingModule } from './device-routing.module';
-import { DeviceListerService } from "./device-lister.service";
+import { DeviceEffects } from "./device.effects";
 import { DeviceListComponent } from './device-list/device-list.component';
+import { DeviceControlComponent } from './device-control/device-control.component';
+import { deviceFeatureReducers, initialDeviceFeatureState } from "./device-feature.reducer";
 
 @NgModule({
   imports: [
     CommonModule,
     SharedModule,
-    DeviceRoutingModule
+    DeviceRoutingModule,
+    StoreModule.forFeature("deviceFeature", deviceFeatureReducers, {
+      initialState: initialDeviceFeatureState
+    }),
+    EffectsModule.forFeature([DeviceEffects])
   ],
-  declarations: [DeviceListComponent],
-  providers: [DeviceListerService]
+  declarations: [DeviceListComponent, DeviceControlComponent],
+  providers: []
 })
 export class DeviceModule { }

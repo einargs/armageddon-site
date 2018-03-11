@@ -1,0 +1,9 @@
+<section *ngIf="selectedDevice$ | async as device">
+  <h1>{{device.id}}</h1>
+  <mat-form-field>
+    <textarea matInput #config
+        placeholder="New Config"></textarea>
+  </mat-form-field>
+  <button mat-button
+      (click)="configureDevice(config.value)">Post Config</button>
+</section>

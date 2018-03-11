@@ -4,13 +4,13 @@
   "license": "MIT",
   "scripts": {
     "ng": "ng",
-    "poll-serve": "ng serve --poll=1000",
+    "start": "ng serve --poll=1000",
     "build-prod": "ng build --prod --aot --build-optimizer",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "mock-api": "json-server --watch ./mock-api.json",
-    "serve-api": "ng serve --live-reload false --proxy-config ./proxy.conf.json && npm run mock-api"
+    "serve-api": "ng serve --poll=1000 --proxy-config ./proxy.conf.json && npm run mock-api"
   },
   "private": true,
   "dependencies": {
