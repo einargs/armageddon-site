@@ -198,12 +198,15 @@ const listAccessibleDevices = functions.https.onRequest(async (req, res) => {
   res.json(userDevices);
 });
 
-//TODO:add authorization!
+//TODO:add sanitization!
 const configureDevice = functions.https.onRequest(async (req, res) => {
   const deviceId: string = req.body.deviceId;
   const deviceDescription: DeviceDescription =
       describeDeviceInRegistry(IOT_ARM_DEVICES_CONFIG, deviceId);
-  const newConfig: any = req.body.config;
+  const newConfigUnsanitized: any = req.body.config;
+  const newConfig = typeof newConfigUnsanitized === "string"
+      ? JSON.parse(newConfigUnsanitized)
+      : newConfigUnsanitized;
   const idToken = req.get("Authorization");
 
   try {
