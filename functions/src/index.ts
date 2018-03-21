@@ -12,6 +12,12 @@ const IOT_ARM_DEVICES_CONFIG: RegistryDescription = {
   cloudRegion: "us-central1",
   registryId: "arm-devices",
 };
+// Fields that should be included in returned devices
+const DEVICE_FIELD_MASK = [
+  "blocked",
+  "lastHeartbeatTime",
+  "state"
+].join(",");
 
 // Interfaces
 interface UserData {
@@ -66,7 +72,12 @@ function decodeDevice(device: any) {
 }
 
 // Is a user allowed to configure this device?
-function canUserConfigureDevice(deviceId: string, user: User) {
+function canUserConfigureDevice(deviceId: string, user: User): boolean {
+  return user.data.allowedDevices[deviceId];
+}
+
+// Is a user allowed to access this device?
+function canUserAccessDevice(deviceId: string, user: User): boolean {
   return user.data.allowedDevices[deviceId];
 }
 
@@ -89,8 +100,6 @@ async function getUserFromToken(token): Promise<User> {
   const userData: any = (await firebaseAdmin.firestore()
       .doc(`users/${user.uid}`)
       .get()).data();
-
-  console.log(userData);
 
   return {
     uid: user.uid,
@@ -128,9 +137,14 @@ function describeDeviceInRegistry(
   }
 }
 
-// Get the devices a user is allowed to access
-async function getUserDevices(
-    registryDescription: RegistryDescription, user: User): Promise<Device[]> {
+
+// Get several devices by id
+// NOTE that this function does not verify that a user is allowed to access the
+// fetched resource. The caller of this function is responsible for restricting
+// user access.
+async function getDevices(
+    registryDescription: RegistryDescription,
+    deviceIds: string[]): Promise<Device[]> {
   const iotClient = await getIotClient();
   const registryName = makeRegistryName(registryDescription);
 
@@ -138,13 +152,10 @@ async function getUserDevices(
     // The registry the device is in
     parent: registryName,
     // The ids of the devices that should be returned
-    deviceIds: Object.keys(user.data.allowedDevices),
+    // NOTE this means that the only devices returned are allowed devices
+    deviceIds: deviceIds,
     // The fields that should be returned in the request
-    fieldMask: [
-      "blocked",
-      "lastHeartbeatTime",
-      "state"
-    ].join(",")
+    fieldMask: DEVICE_FIELD_MASK
   };
 
   // Make the request to the API & await the response
@@ -158,7 +169,6 @@ async function getUserDevices(
 
   // Map the raw API format of the devices to a friendlier version
   const devices = apiResponse.data.devices.map(decodeDevice);
-  console.log(devices);
 
   return devices;
 }
@@ -189,17 +199,54 @@ async function modifyDeviceConfiguration(
 }
 
 // HTTP functions
-const listAccessibleDevices = functions.https.onRequest(async (req, res) => {
-  const idToken = req.get("Authorization"); // Get the authorization header
+//TODO: Add proper error handling. See listAccessibleDevices for more detail.
+export const listDevices = functions.https.onRequest(async (req, res) => {
+  // Get the user id token from the Authorization header
+  const idToken = req.get("Authorization");
+  // use that token to get user information
   const user = await getUserFromToken(idToken);
 
-  const userDevices = await getUserDevices(IOT_ARM_DEVICES_CONFIG, user);
+  // Get the ids of the requested devices from the url query parameters
+  const deviceIdsRaw: string | string[] = req.query.deviceIds;
+  const deviceIds: string[] =
+      (Array.isArray(deviceIdsRaw)
+      ? deviceIdsRaw
+      : [deviceIdsRaw]) as string[];
 
-  res.json(userDevices);
+  // If any of the requested devices are not accessible by the user,
+  // end the response with an error status code.
+  if (!deviceIds.every(id => user.data.allowedDevices[id])) {
+    res.status(401).end(); //401: Unauthorized/not authorized for this
+  } else {
+    const devices = await getDevices(
+        IOT_ARM_DEVICES_CONFIG, deviceIds);
+    res.status(200).json(devices);
+  }
+});
+
+export const listAccessibleDevices = functions.https.onRequest(async (req, res) => {
+  //TODO: Refine the try-catch. Figure out how to be more granular
+  // so that I can give unique error messages and status codes for each failure--
+  // so if getUserFromToken fails, there's an "Authorization not accepted" error,
+  // but if getting the device fails, something different happens. I may need
+  // to dip into throwing my own errors.
+  try {
+    const idToken = req.get("Authorization"); // Get the authorization header
+    const user = await getUserFromToken(idToken);
+
+    const userDevices = await getDevices(
+        IOT_ARM_DEVICES_CONFIG, Object.keys(user.data.allowedDevices));
+
+    res.status(200).json(userDevices);
+  } catch (error) {
+    console.error("Error while getting user");
+    console.error(error);
+    res.status(500).end(); //500: internal server error
+  }
 });
 
 //TODO:add sanitization!
-const configureDevice = functions.https.onRequest(async (req, res) => {
+export const configureDevice = functions.https.onRequest(async (req, res) => {
   const deviceId: string = req.body.deviceId;
   const deviceDescription: DeviceDescription =
       describeDeviceInRegistry(IOT_ARM_DEVICES_CONFIG, deviceId);
@@ -232,9 +279,3 @@ const configureDevice = functions.https.onRequest(async (req, res) => {
     res.status(500).end(); //500: internal server error
   }
 });
-
-export {
-  //listDevices, // Originally for testing; insecure
-  listAccessibleDevices,
-  configureDevice
-};

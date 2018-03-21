@@ -27,7 +27,6 @@ export class DeviceControlComponent implements OnDestroy {
     private route: ActivatedRoute,
     private store: Store<State>
   ) {
-    this.store.dispatch(new LoadAccessibleDevices());
     // The store is an observer, which means that it can subscribe
     // to an observable. Specifically, it can subscribe to an observable
     // of actions, which it then internally dispatches.
