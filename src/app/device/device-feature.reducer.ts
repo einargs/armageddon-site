@@ -4,9 +4,13 @@ caused by inexperience with NgRx), I wasn't able to pick out a nice, distinct
 name.
 */
 import { createSelector, createFeatureSelector, ActionReducerMap } from "@ngrx/store";
+import { Dictionary } from "@ngrx/entity/src/models";
 
 import { CoreState } from "../core/core.reducer";
 import { DeviceState, deviceReducer, deviceAdapter, initialDeviceState } from "./device.reducer";
+import { Device } from "./device";
+
+export type DeviceDictionary = Dictionary<Device>;
 
 export interface DeviceFeatureState {
   device: DeviceState;
@@ -31,8 +35,11 @@ export const getDeviceState = createSelector(
 
 const deviceAdapterSelectors = deviceAdapter.getSelectors();
 
-export const getDeviceIndex = createSelector(
+export const getDeviceDictionary = createSelector(
     getDeviceState, deviceAdapterSelectors.selectEntities);
+
+export const getAllDeviceIds = createSelector(
+    getDeviceState, deviceAdapterSelectors.selectIds);
 
 export const getAllDevices = createSelector(
     getDeviceState, deviceAdapterSelectors.selectAll);
@@ -41,6 +48,6 @@ export const getSelectedDeviceId = createSelector(
     getDeviceState, state => state.selectedDeviceId);
 
 export const getSelectedDevice = createSelector(
-    getDeviceIndex, getSelectedDeviceId,
-    (deviceIndex, selectedDeviceId) =>
-        selectedDeviceId ? deviceIndex[selectedDeviceId] : null);
+    getDeviceDictionary, getSelectedDeviceId,
+    (deviceDictionary, selectedDeviceId) =>
+        selectedDeviceId ? deviceDictionary[selectedDeviceId] : null);

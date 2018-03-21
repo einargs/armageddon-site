@@ -6,9 +6,12 @@
     "ng": "ng",
     "start": "ng serve --poll=1000",
     "build-prod": "ng build --prod --aot --build-optimizer",
+    "build-dev": "ng build",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
+    "build-functions": "cd functions && npm run build",
+    "fire-serve": "firebase serve --only functions,hosting",
     "mock-api": "json-server --watch ./mock-api.json --routes ./mock-api-routes.json",
     "serve-for-api": "ng serve --poll=1000 --proxy-config ./proxy.conf.json"
   },

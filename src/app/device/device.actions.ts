@@ -4,7 +4,9 @@ export enum DeviceActionTypes {
   LOAD_ACCESSIBLE_DEVICES = "[Device] Load Accessible Devices",
   DEVICES_LOADED = "[Device] Devices Loaded",
   SELECT_DEVICE = "[Device] Select Device",
-  CHANGE_DEVICE_CONFIG = "[Device] Change Device Config"
+  CHANGE_DEVICE_CONFIG = "[Device] Change Device Config",
+  LOAD_DEVICE_BY_ID = "[Device] Load Device By Id",
+  ENSURE_DEVICES_ARE_LOADED = "[Device] Ensure Devices Are Loaded"
 }
 
 export class LoadAccessibleDevices {
@@ -34,8 +36,29 @@ export class ChangeDeviceConfig {
   constructor(public payload: ChangeDeviceConfigPayload) {}
 }
 
+export interface LoadDevicesByIdPayload {
+  deviceIds: string[];
+}
+
+export class LoadDevicesById {
+  readonly type = DeviceActionTypes.LOAD_DEVICE_BY_ID;
+
+  constructor (public payload: LoadDevicesByIdPayload) {}
+}
+
+export interface EnsureDevicesAreLoadedPayload {
+  deviceIds: string[];
+}
+
+export class EnsureDevicesAreLoaded {
+  readonly type = DeviceActionTypes.ENSURE_DEVICES_ARE_LOADED;
+
+  constructor (public payload: EnsureDevicesAreLoadedPayload) {}
+}
+
 export type DeviceAction
     = LoadAccessibleDevices
     | DevicesLoaded
     | SelectDevice
-    | ChangeDeviceConfig;
+    | ChangeDeviceConfig
+    | LoadDevicesById;
