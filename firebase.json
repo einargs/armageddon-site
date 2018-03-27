@@ -13,9 +13,7 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      { "source": "/api/devices/list", "function": "listAccessibleDevices" },
-      { "source": "/api/devices/configure", "function": "configureDevice" },
-      { "source": "/api/devices/get", "function": "listDevices"},
+      { "source": "/api/**", "function": "apiRoot" },
       { "source": "**", "destination": "/index.html" }
     ]
   }
