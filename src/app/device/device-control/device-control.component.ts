@@ -4,6 +4,7 @@ import { ActivatedRoute } from "@angular/router";
 import { Subscription } from "rxjs/Subscription";
 import { map, take } from "rxjs/operators";
 
+import { DeviceConfig } from "../device";
 import {
   State,
   getSelectedDevice,
@@ -11,7 +12,7 @@ import {
 import {
   SelectDevice,
   LoadAccessibleDevices,
-  ChangeDeviceConfig } from "../device.actions";
+  ConfigureDevices } from "../device.actions";
 
 @Component({
   selector: 'arm-device-control',
@@ -36,20 +37,21 @@ export class DeviceControlComponent implements OnDestroy {
         .subscribe(this.store);
   }
 
-  configureDevice(newConfig: string) {
+  configureDevice(newConfigJson: string) {
+    const newConfig: DeviceConfig = JSON.parse(newConfigJson);
     console.log("New Config", newConfig);
     // I *think* this subscription should auto-unsubscribe.
     // TODO: check if this subscription hangs around, or if this is safe.
-    // Also, figure out how to even check that in the first place.
-    // Do I need documentation, or is there an actual tool? A tool would be
-    // super-useful.
+    // Also, figure out how to even check that in the first place--do I
+    // need to look at documentation/source-code, or is there an actual tool?
+    // A tool would be super-useful.
     this.selectedDeviceId$
         .pipe(
             take(1),
-            map(deviceId => new ChangeDeviceConfig({
+            map(deviceId => new ConfigureDevices([{
               deviceId: deviceId,
               newConfig: newConfig
-            }))
+            }]))
         )
         .subscribe(this.store);
   }

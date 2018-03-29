@@ -1,18 +1,19 @@
 import { Injectable } from "@angular/core";
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Actions, Effect, ofType } from '@ngrx/effects';
 import { Store, select } from "@ngrx/store";
 import { AngularFireAuth } from "angularfire2/auth";
 import { User as FirebaseUser } from "firebase/app";
 import { Observable } from 'rxjs/Observable';
 import {
-  catchError, map, switchMap, filter,
+  catchError, map, switchMap, filter, tap,
   withLatestFrom } from 'rxjs/operators';
 
 import {
   DeviceActionTypes,
   DevicesLoaded,
-  ChangeDeviceConfig,
+  ConfigureDevices,
+  ConfigureDeviceRequest,
   LoadDevicesById,
   EnsureDevicesAreLoaded,
   SelectDevice } from "./device.actions";
@@ -21,6 +22,10 @@ import {
   getDeviceDictionary,
   DeviceDictionary } from "./device-feature.reducer";
 import { Device } from "./device";
+
+interface UrlQueryList {
+  [key: string]: string | string[];
+}
 
 //TODO Reformat the observable pipes. I've got this bastard implementation
 // of the google javascript style guide's advice on multi-line arguments
@@ -36,28 +41,23 @@ export class DeviceEffects {
   loadAccessibleDevices$ =
       this.actions$.pipe(
           ofType(DeviceActionTypes.LOAD_ACCESSIBLE_DEVICES),
-          switchMap(() => this.getIdToken()),
-          switchMap(idToken => this.http.get<Device[]>("api/devices/list", {
-            headers: new HttpHeaders({
-              "Authorization": idToken
-            })
-          })),
+          switchMap(() => this.getUserAccessibleDevices()),
+          tap(console.log),
           map(devices => new DevicesLoaded({devices}))
       );
 
   @Effect({ dispatch: false })
-  configureDevice$ =
+  configureDevices$ =
       this.actions$.pipe(
-          ofType(DeviceActionTypes.CHANGE_DEVICE_CONFIG),
-          map((action: ChangeDeviceConfig) => action.payload),
-          switchMap(payload => this.putDeviceConfig(
-              payload.deviceId, payload.newConfig))
+          ofType(DeviceActionTypes.CONFIGURE_DEVICES),
+          switchMap((action: ConfigureDevices) =>
+              this.putDeviceConfigs(action.payload))
       );
 
   @Effect()
   loadDevicesById$ =
       this.actions$.pipe(
-          ofType(DeviceActionTypes.LOAD_DEVICE_BY_ID),
+          ofType(DeviceActionTypes.LOAD_DEVICES_BY_ID),
           switchMap((action: LoadDevicesById) =>
               this.getDevicesById(action.payload.deviceIds)),
           map((devices: Device[]) =>
@@ -98,29 +98,35 @@ export class DeviceEffects {
         switchMap(user => Observable.fromPromise(user.getIdToken())));
   }
 
-  private getDevicesById(deviceIds: string[]): Observable<Device[]> {
+  private getDevices(params: UrlQueryList): Observable<Device[]> {
     return this.getIdToken().pipe(
-      switchMap(idToken => this.http.get<Device[]>(
-          "api/devices/get", {
-            params: {
-              deviceIds: deviceIds
-            },
+        switchMap(idToken => this.http.get<Device[]>(
+          "api/devices", {
+            params: params,
             headers: new HttpHeaders({
               "Authorization": idToken
             })
           }
-        )));
+        )))
   }
 
-  private putDeviceConfig(deviceId: string, newConfig: any) {
-    return this.afAuth.authState.pipe(
-      switchMap(() => this.getIdToken()),
+  private getDevicesById(deviceIds: string[]): Observable<Device[]> {
+    return this.getDevices({
+      "deviceIds": deviceIds
+    });
+  }
+
+  private getUserAccessibleDevices(): Observable<Device[]> {
+    return this.getDevices({
+      "allUserDevices": "true"
+    });
+  }
+
+  private putDeviceConfigs(body: ConfigureDeviceRequest[]) {
+    return this.getIdToken().pipe(
       switchMap(idToken => this.http.put<any>(
-          "api/devices/configure",
-          {
-            deviceId: deviceId,
-            config: newConfig
-          },
+          "api/devices",
+          body,
           {
             headers: new HttpHeaders({
               "Authorization": idToken
