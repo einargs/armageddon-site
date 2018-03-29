@@ -114,7 +114,7 @@ app.put("/api/devices", async (req, res) => {
     newConfig: ArmConfigData;
   }
   const configRequests: ConfigureDeviceRequest[] = req.body;
-  const targetedDeviceIds = configRequests.map(req => req.deviceId);
+  const targetedDeviceIds = configRequests.map(configReq => configReq.deviceId);
   const user = res.locals.user;
   const armClient = await armClientPromise;
 
