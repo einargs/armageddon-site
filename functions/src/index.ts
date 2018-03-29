@@ -111,7 +111,7 @@ app.put("/api/devices", async (req, res) => {
   // The format of an individual request to configure a device.
   interface ConfigureDeviceRequest {
     deviceId: string;
-    config: ArmConfigData;
+    newConfig: ArmConfigData;
   }
   const configRequests: ConfigureDeviceRequest[] = req.body;
   const targetedDeviceIds = configRequests.map(req => req.deviceId);
@@ -124,7 +124,7 @@ app.put("/api/devices", async (req, res) => {
       await Promise.all(
           configRequests.map(
               (request: ConfigureDeviceRequest) =>
-                  armClient.configureDevice(request.deviceId, request.config)));
+                  armClient.configureDevice(request.deviceId, request.newConfig)));
       res.status(200).end();
     } catch (error) {
       console.error("Error while configuring devices in PUT /api/devices", error);
