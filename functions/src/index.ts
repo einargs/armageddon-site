@@ -38,24 +38,11 @@ const app = express();
 // some portion of the API we want to ).
 // In such a case, extract this into
 app.use(async (req, res, next) => {
-  console.log("Request", req.originalUrl);
   const idToken = req.get("Authorization");
   const user = await getUserFromToken(idToken);
   res.locals.user = user;
   next();
 });
-
-async function respondWithAllUserDevices(
-    req: express.Request, res: express.Response): Promise<void> {
-  const user = res.locals.user;
-  const armClient = await armClientPromise;
-}
-
-async function respondWithDeviceIds(
-    req: express.Request, res: express.Response): Promise<void> {
-  const user = res.locals.user;
-  const armClient = await armClientPromise;
-}
 
 //TODO: pagination (preferably through an opaque cursor).
 // Get devices. Used even for a single device.
@@ -111,9 +98,9 @@ app.get("/api/devices", async (req, res, next) => {
         error: "URL query lacked recognizable parameters"
       });
     }
-  } catch (e) {
-    console.log(e);
-    next(e);
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
 });
 
