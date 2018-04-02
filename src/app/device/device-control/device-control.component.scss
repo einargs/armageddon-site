@@ -1,0 +1,23 @@
+.device-control-container {
+  padding: 1em;
+}
+
+.config-form {
+  display: flex;
+  flex-flow: column;
+}
+
+.led-checkbox-list {
+  display: flex;
+  flex-flow: column;
+  padding: 0 1em;
+}
+
+.led-checkbox {
+  padding: 1em 0;
+}
+
+.submit-button {
+  align-self: center;
+  margin-top: 1.5em;
+}

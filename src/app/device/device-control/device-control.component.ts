@@ -1,4 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
+import { FormGroup, FormControl, FormBuilder } from "@angular/forms";
 import { Store, select } from "@ngrx/store";
 import { ActivatedRoute } from "@angular/router";
 import { Subscription } from "rxjs/Subscription";
@@ -24,9 +25,12 @@ export class DeviceControlComponent implements OnDestroy {
   selectedDevice$ = this.store.pipe(select(getSelectedDevice));
   selectedDeviceId$ = this.store.pipe(select(getSelectedDeviceId));
 
+  configForm: FormGroup;
+
   constructor(
     private route: ActivatedRoute,
-    private store: Store<State>
+    private store: Store<State>,
+    private fb: FormBuilder
   ) {
     // The store is an observer, which means that it can subscribe
     // to an observable. Specifically, it can subscribe to an observable
@@ -35,10 +39,28 @@ export class DeviceControlComponent implements OnDestroy {
         .pipe(
             map(params => new SelectDevice({deviceId:params.id})))
         .subscribe(this.store);
+
+    this.configForm = this.createForm();
   }
 
-  configureDevice(newConfigJson: string) {
-    const newConfig: DeviceConfig = JSON.parse(newConfigJson);
+  private createForm(): FormGroup {
+    return this.fb.group({
+      leds: this.fb.group({
+        "builtin": false //TEMP use device state/config for initial
+      })
+    });
+  }
+
+  submitConfiguration(): void {
+    const model = {
+      leds: {
+        builtin: this.configForm.get("leds.builtin").value
+      }
+    };
+    this.configureDevice(model);
+  }
+
+  configureDevice(newConfig: DeviceConfig) {
     console.log("New Config", newConfig);
     // I *think* this subscription should auto-unsubscribe.
     // TODO: check if this subscription hangs around, or if this is safe.

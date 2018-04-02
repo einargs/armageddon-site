@@ -1,9 +1,18 @@
-<section *ngIf="selectedDevice$ | async as device">
-  <h1>{{device.id}}</h1>
-  <mat-form-field>
-    <textarea matInput #config
-        placeholder="New Config"></textarea>
-  </mat-form-field>
-  <button mat-button
-      (click)="configureDevice(config.value)">Post Config</button>
+<section
+    *ngIf="selectedDevice$ | async as device"
+    class="device-control-container">
+  <form [formGroup]="configForm" class="config-form">
+    <h1>{{device.id}}</h1>
+    <div formGroupName="leds">
+      <h2>Leds</h2>
+      <div class="led-checkbox-list">
+        <mat-checkbox
+            formControlName="builtin"
+            class="led-checkbox">Builtin</mat-checkbox>
+      </div>
+    </div>
+    <button mat-raised-button
+        (click)="submitConfiguration()"
+        class="submit-button">Post Config</button>
+  </form>
 </section>
