@@ -1,5 +1,6 @@
 import { Component, OnDestroy } from '@angular/core';
-import { FormGroup, FormControl, FormBuilder } from "@angular/forms";
+import {
+  FormGroup, FormControl, FormBuilder, Validators } from "@angular/forms";
 import { Store, select } from "@ngrx/store";
 import { ActivatedRoute } from "@angular/router";
 import { Subscription } from "rxjs/Subscription";
@@ -46,8 +47,16 @@ export class DeviceControlComponent implements OnDestroy {
   private createForm(): FormGroup {
     return this.fb.group({
       leds: this.fb.group({
-        "builtin": false //TEMP use device state/config for initial
-      })
+        builtin: false //TEMP use device state/config for initial
+      }),
+      motors: this.fb.group({
+        base: 0,
+        shoulder: 0,
+        elbow: 0,
+        horizontal: 0,
+        vertical: 0,
+        rotation: 0
+      }, { validators: Validators.required })
     });
   }
 
@@ -55,8 +64,10 @@ export class DeviceControlComponent implements OnDestroy {
     const model = {
       leds: {
         builtin: this.configForm.get("leds.builtin").value
-      }
+      },
+      motors: this.configForm.get("motors").value
     };
+
     this.configureDevice(model);
   }
 

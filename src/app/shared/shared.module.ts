@@ -9,6 +9,8 @@ import {
   MatListModule,
   MatButtonModule,
   MatCardModule,
+  MatSidenavModule,
+  MatSliderModule
 } from "@angular/material";
 
 @NgModule({
@@ -25,6 +27,8 @@ import {
     MatListModule,
     MatButtonModule,
     MatCardModule,
+    MatSidenavModule,
+    MatSliderModule
   ]
 })
 export class SharedModule { }
