@@ -1,8 +1,5 @@
 import * as functions from 'firebase-functions';
-import * as firebaseAdmin from "firebase-admin";
-
-// Initialize firebase admin with environmental configuration information
-firebaseAdmin.initializeApp(functions.config().firebase);
+import { firebaseAdmin } from "./firebase-app";
 
 export interface UserData {
   // Map of device ids to boolean values
