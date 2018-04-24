@@ -122,8 +122,8 @@ app.put("/api/devices", async (req, res) => {
     try {
       await Promise.all(
           configRequests.map(
-              (request: ConfigureDeviceRequest) =>
-                  armClient.configureDevice(request.deviceId, request.newConfig)));
+              (conReq: ConfigureDeviceRequest) =>
+                  armClient.configureDevice(conReq.deviceId, conReq.newConfig)));
       res.status(200).end();
     } catch (error) {
       console.error("Error while configuring devices in PUT /api/devices", error);

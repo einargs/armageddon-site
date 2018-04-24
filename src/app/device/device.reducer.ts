@@ -3,6 +3,8 @@ import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import { Device } from "./device";
 import { DeviceAction, DeviceActionTypes } from "./device.actions";
 
+import { environment } from "../../environments/environment";
+
 export interface DeviceState extends EntityState<Device> {
   selectedDeviceId: string | null;
 }
@@ -12,9 +14,14 @@ export const deviceAdapter = createEntityAdapter<Device>({
   sortComparer: false
 });
 
-export const initialDeviceState: DeviceState = deviceAdapter.getInitialState({
+const baseDeviceState: DeviceState = deviceAdapter.getInitialState({
   selectedDeviceId: null
 });
+// In dev mode, pre-load a device
+export const initialDeviceState: DeviceState =
+    environment.production
+    ? baseDeviceState
+    : deviceAdapter.addAll([{id:"arm-1"} as Device], baseDeviceState);
 
 export function deviceReducer(
     state: DeviceState, action: DeviceAction): DeviceState {

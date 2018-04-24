@@ -1,58 +1,20 @@
 <section
     *ngIf="selectedDevice$ | async as device"
     class="device-control-container">
-  <form [formGroup]="configForm" class="config-form">
-    <h1>{{device.id}}</h1>
-    <div formGroupName="leds">
-      <h2>Leds</h2>
-      <div class="led-checkbox-list">
-        <mat-checkbox
-            formControlName="builtin"
-            class="led-checkbox">Builtin</mat-checkbox>
-      </div>
-    </div>
-    <div formGroupName="motors" class="motor-form-container">
-      <h2>Motors</h2>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="base"
-            placeholder="Base"/>
-      </mat-form-field>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="shoulder"
-            placeholder="Shoulder"/>
-      </mat-form-field>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="elbow"
-            placeholder="Elbow"/>
-      </mat-form-field>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="horizontal"
-            placeholder="Horizontal"/>
-      </mat-form-field>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="vertical"
-            placeholder="Vertical"/>
-      </mat-form-field>
-      <mat-form-field class="motor-form-field">
-        <input matInput
-            required
-            formControlName="rotation"
-            placeholder="Rotation"/>
-      </mat-form-field>
-    </div>
-    <button mat-raised-button
-        [disabled]="configForm.invalid"
-        (click)="submitConfiguration()"
-        class="submit-button">Post Config</button>
-  </form>
+  <arm-arm-model
+      #armModel
+      [armGeometry]="armGeometry"
+      class="model-display"></arm-arm-model>
+
+  <button mat-fab
+      (click)="armModel.toggleControlMode()"
+      class="toggle-control-mode-fab">
+      <!--TODO: find a better icon -->
+    <mat-icon>transform</mat-icon>
+  </button>
+  <button mat-fab
+      (click)="sendConfig(armModel.jointAngles)"
+      class="send-config-fab">
+    <mat-icon>send</mat-icon>
+  </button>
 </section>

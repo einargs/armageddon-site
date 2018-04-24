@@ -10,6 +10,7 @@ import { DeviceEffects } from "./device.effects";
 import { DeviceListComponent } from './device-list/device-list.component';
 import { DeviceControlComponent } from './device-control/device-control.component';
 import { deviceFeatureReducers, initialDeviceFeatureState } from "./device-feature.reducer";
+import { ArmModelComponent } from './arm-model/arm-model.component';
 
 // Angular Ahead-Of-Time compilation does not support non-statically resolvable
 // tokens inside of decorators. Because I'm using an entity adapter, and the
@@ -33,7 +34,7 @@ export function getInitialDeviceFeatureState() {
     }),
     EffectsModule.forFeature([DeviceEffects])
   ],
-  declarations: [DeviceListComponent, DeviceControlComponent],
+  declarations: [DeviceListComponent, DeviceControlComponent, ArmModelComponent],
   providers: []
 })
 export class DeviceModule { }

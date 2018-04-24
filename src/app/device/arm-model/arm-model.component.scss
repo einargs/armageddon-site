@@ -1,0 +1,28 @@
+:host {
+  display: flex;
+  flex-flow: column;
+}
+
+.container {
+  //NOTE: Setting height to 100px *somehow* makes this all work.
+  // *Don't funking question it.*
+  // Without this, the canvas just kept getting taller and wider
+  // and it didn't even fit initially, and it was pushing the toolbar
+  // up, and... resizes made it bigger, even though I was passing the argument
+  // to prevent that to the threejs renderer.setSize(width, height, updateStyle)
+  // method...
+  // Just... just don't funk with this. Please.
+  height: 100px;
+
+
+  display: flex;
+  flex-flow: column;
+  flex: 1 0 auto;
+  overflow: hidden;
+}
+
+.target-canvas {
+  //flex: 1 0 auto;
+  position: relative;
+  z-index: 0;
+}
